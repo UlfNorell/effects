@@ -126,8 +126,10 @@ tac-subset = tac-all tac-find-index
 macro subset! = tac-subset
 
 macro
-  lift = apply-tac-con (quote liftE) tac-subset
-  call = apply-tac-con (quote callE) tac-find-index
+  lift_ = apply-tac-con (quote liftE) tac-subset
+  call_ = apply-tac-con (quote callE) tac-find-index
+
+infix -100 call_
 
   -- bindEff = apply-tac-def (quote bindEff′) tac-subset
   -- thenEff = apply-tac-def (quote thenEff′) tac-subset
