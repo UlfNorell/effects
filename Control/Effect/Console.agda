@@ -10,8 +10,8 @@ open import Lib
 data ConsoleIO : Effect where
   putStr : String → ConsoleIO ⊤ ⊤ (λ _ → ⊤)
 
-CONSOLE : EFFECT
-CONSOLE = mkEff ⊤ ConsoleIO
+CONSOLE : List EFFECT
+CONSOLE = [ ConsoleIO ⊢ ⊤ ]
 
 instance
   HandleConsole : Handler ConsoleIO IO

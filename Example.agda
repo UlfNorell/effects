@@ -8,33 +8,41 @@ open import Control.Effect.Console
 open import Control.Effect.File
 open import Variables
 
-test-io : Eff M [ STATE Nat ∷ CONSOLE ∷ [] => STATE Nat ∷ CONSOLE ∷ [] ] Nat
+test-io : Eff M Nat [ STATE Nat ∧ CONSOLE => STATE Nat ∧ CONSOLE ]
 test-io = do
   x ← call get
   call (putStr ("x = " & show x & "\n"))
   ret x
 
-nested : Eff IO [ CONSOLE ∷ FILE ⊤ ∷ [] => CONSOLE ∷ FILE ⊤ ∷ [] ] ⊤
-nested = do
+copyLine : (hᵢ : FileHandle readMode) (hₒ : FileHandle writeMode) →
+           Eff M ⊤ [ FILE (Open hᵢ) ∧ FILE (Open hₒ) =>
+                     FILE (Open hᵢ) ∧ FILE (Open hₒ) ]
+copyLine hᵢ hₒ = do
+  s ← call fReadLine hᵢ
+  call fWrite hₒ (s & "\n")
+
+example : ⦃ _ : Handler FileIO M ⦄ → Eff M ⊤ [ CONSOLE => CONSOLE ]
+example = do
   call putStr "Starting\n"
   n ← newE (STATE Nat) 42 do
         s  ← lift (modify suc)
         s' ← call get
         ret (s * s')
   call putStr $ "n = " & show n & "\n"
-  newE (FILE ⊤) _ do
-    success h ← call openFile "Example.agda" readMode
+  newE (FILE Closed) _ $ newE (FILE Closed) _ do
+    success h ← call openFile "in.txt" readMode
       where failure _ → do
               call putStr "Failed to open file"
               ret _
-    success h₁ ← call openFile "Variables.agda" readMode
+    success h₁ ← call openFile "out.txt" writeMode
       where failure _ → call closeFile h
-    call getLine h₁
-    s ← call getLine h₁
-    call putStr $ "Second line: " & s & "\n"
+    lift copyLine h h₁
+    lift copyLine h h₁
+    s ← call fReadLine h
+    call putStr $ "Third line: " & s & "\n"
     call closeFile h
     call closeFile h₁
   ret _
 
 main : IO ⊤
-main = runEff (_ ∷ _ ∷ []) nested λ _ _ → return _
+main = runEff (_ ∷ []) example λ _ _ → return _

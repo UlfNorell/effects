@@ -38,8 +38,8 @@ nometaSpine (con _ _) = return _
 nometaSpine (var _ _) = return _
 nometaSpine x = ensureNoMetas x
 
-tac-find-index : Tactic
-tac-find-index ?hole = do
+tac-find-index' : Tactic → Tactic
+tac-find-index' checkElem ?hole = do
   def (quote Any)
     ( _ ∷ _ ∷ _
     ∷ vArg (def (quote _≡_) (_ ∷ _ ∷ vArg `x ∷ []))
@@ -48,8 +48,12 @@ tac-find-index ?hole = do
             ensureNoMetas g
             typeError $ termErr g ∷ strErr "!= _ ∈ _" ∷ []
   nometaSpine `xs
+  checkElem `x
   choice (map (unify ?hole) (indices `xs)) <|> withNormalisation true do
     typeError $ termErr `x ∷ strErr "not found in" ∷ termErr `xs ∷ []
+
+tac-find-index : Tactic
+tac-find-index = tac-find-index' (λ _ → return _)
 
 private
   prove-all : Tactic → Term → Term → TC ⊤

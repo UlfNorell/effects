@@ -6,7 +6,7 @@ open import Agda.Builtin.List
 
 variable
   ℓ ℓ₁ ℓ₂ : Level
-  A B C : Set ℓ
+  A B C D A′ B′ A₁ B₁ A₂ B₂ : Set ℓ
   xs ys : List A
   x y : A
   F M : Set ℓ → Set ℓ

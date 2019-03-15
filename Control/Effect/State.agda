@@ -8,22 +8,22 @@ open import Variables
 open import Lib
 
 data State : Effect where
-  get : State A A (λ _ → A)
-  put : B → State ⊤ A (λ _ → B)
+  get : State A [ A => A ]
+  put : B → State ⊤ [ A => B ]
 
 instance
   HandleState : Handler State M
   HandleState .handle s get     k = k s s
   HandleState .handle s (put x) k = k _ x
 
-STATE : Set → EFFECT
-STATE S = mkEff S State
+STATE : Set → List EFFECT
+STATE S = [ State ⊢ S ]
 
-modify : (A → B) → Eff M [ STATE A ∷ [] => STATE B ∷ [] ] A
+modify : (A → B) → Eff M A [ STATE A => STATE B ]
 modify f = do
   x ← call get
   call (put (f x))
   ret x
 
-runS : Eff id [ STATE B ∷ [] => STATE C ∷ [] ] A → B → A × C
+runS : Eff id A [ STATE B => STATE C ] → B → A × C
 runS m s = runEff (s ∷ []) m λ { x (s′ ∷ []) → x , s′ }
