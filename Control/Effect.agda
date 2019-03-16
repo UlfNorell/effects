@@ -60,14 +60,18 @@ data Eff (M : Set → Set) (A : Set) (esᵢ : List EFFECT) : (A → List EFFECT)
          ⦃ eq : es ≡ E ⊢ Res ∷ [] ⦄ →
          Eff M A (es ∧ esᵢ) (λ _ → es ∧ esᵢ) → Eff M A esᵢ (λ _ → esᵢ)
 
-syntax transformed f i (λ x → o) = f [ i => x ∙ o ]
-syntax transformed' f i o = f [ i => o ]
+syntax EffSyntax f i (λ x → o) = f [ i => x ∙ o ]
+syntax EffSyntax-nondep f i o = f [ i => o ]
+syntax EffSyntax-noupd f i = f [- i -]
 
-transformed : (A → (B → C) → D) → A → (B → C) → D
-transformed f = f
+EffSyntax : (A → (B → C) → D) → A → (B → C) → D
+EffSyntax f = f
 
-transformed' : (A → (B → C) → D) → A → C → D
-transformed' f i o = f i (λ _ → o)
+EffSyntax-nondep : (A → (B → C) → D) → A → C → D
+EffSyntax-nondep f i o = f i (λ _ → o)
+
+EffSyntax-noupd : (A → (B → A) → D) → A → D
+EffSyntax-noupd f i = f i (λ _ → i)
 
 bindEff : Eff M B esᵢ esₒ → ((x : B) → Eff M A (esₒ x) esₒ′) → Eff M A esᵢ esₒ′
 bindEff = bindE

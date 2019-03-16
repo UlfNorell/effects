@@ -107,8 +107,8 @@ data FileIO : Effect where
   openFile  : String → (m : IOMode) →
               FileIO (FileIOResult (FileHandle m)) [ Closed => r ∙ openFileResource m r ]
   closeFile : (h : FileHandle m) → FileIO ⊤ [ Open h => Closed ]
-  fReadLine : ⦃ c : CanRead m ⦄ (h : FileHandle m) → FileIO String [ Open h => Open h ]
-  fWrite    : ⦃ w : CanWrite m ⦄ (h : FileHandle m) → String → FileIO ⊤ [ Open h => Open h ]
+  fReadLine : ⦃ c : CanRead m ⦄ (h : FileHandle m) → FileIO String [- Open h -]
+  fWrite    : ⦃ w : CanWrite m ⦄ (h : FileHandle m) → String → FileIO ⊤ [- Open h -]
 
 FILE : Set → List EFFECT
 FILE H = [ FileIO ⊢ H ]

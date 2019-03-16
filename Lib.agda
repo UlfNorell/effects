@@ -75,9 +75,6 @@ tac-all tac ?hole = do
   prove-all tac `xs ?hole <|>
     typeError (strErr "Can't prove" ∷ termErr g ∷ [])
 
-macro subl = tac-all tac-find-index
+-- macro subl = tac-all tac-find-index
 
-macro ix = tac-find-index
-
-test : (3 ofType Nat) ∈ 1 ∷ 2 ∷ 3 ∷ 4 ∷ []
-test = ix
+-- macro ix = tac-find-index
