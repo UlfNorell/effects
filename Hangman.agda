@@ -24,6 +24,14 @@ initialGuesses = 6
 letters : String → List Char
 letters s = uniq (unpackString s)
 
+blankWord : String → Vec Char n → String
+blankWord s missing = mconcat $ map blank $ unpackString s
+  where
+    blank : Char → String
+    blank c with c ∈? missing
+    ... | yes _ = "_"
+    ... | no  _ = packString [ c ]
+
 data Mystery : GameState → Set where
   initSt   : Mystery notRunning
   gameWon  : (w : String) → Mystery notRunning
@@ -37,7 +45,7 @@ instance
   showMystery .showsPrec _ (gameWon w) = showString "You won! The word was " ∘ shows w
   showMystery .showsPrec _ (gameLost w) = showString "You lost. The word was " ∘ shows w
   showMystery .showsPrec _ (running {g = g} w got missing) =
-    showString "Correct guesses: " ∘ shows got ∘ showString ". " ∘
+    showString (blankWord w missing) ∘ showString "\n" ∘
     shows g ∘ showString " guesses remaining."
 
 data MysteryRules : Effect where

@@ -13,11 +13,14 @@ private
   variable
     g l : Nat
 
+strToUpper : String → String
+strToUpper = packString ∘ map toUpper ∘ unpackString
+
 charGuess : String → Char
 charGuess s =
   case unpackString s of λ where
-    (c ∷ _) → c
-    []      → 'x'
+    (c ∷ _) → toUpper c
+    []      → '_'
 
 game : Eff M ⊤ [ MYSTERY (running g l) ∧ CONSOLE =>
                  MYSTERY notRunning    ∧ CONSOLE ]
@@ -43,7 +46,7 @@ runGame : Eff M ⊤ [- RND ∧ CONSOLE -]
 runGame = do
   i ← call randomNat _
   new (MYSTERY notRunning) initSt do
-    call newGame (indexVec words i)
+    call newGame (strToUpper $ indexVec words i)
     lift game
     s ← call showState
     call putStrLn s
