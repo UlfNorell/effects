@@ -119,6 +119,11 @@ runEff env (newE e r ⦃ refl ⦄ m)  k = runEff (r ∷ env) m (λ { x (_ ∷ en
 returnEff : A → Eff M A [ esᵢ => esᵢ ]
 returnEff x = ret x
 
+new : ⦃ h : Handler E M ⦄ (es : List EFFECT) → Res →
+      ⦃ eq : es ≡ E ⊢ Res ∷ [] ⦄ →
+      Eff M A (es ∧ esᵢ) (λ _ → es ∧ esᵢ) → Eff M A esᵢ (λ _ → esᵢ)
+new = newE
+
 -- call : (e : E A Resᵢ Resₒ) → Eff A (mkEff Resᵢ E ∷ []) (λ x → mkEff (Resₒ x) E ∷ [])
 -- call e = callE zero! e
 

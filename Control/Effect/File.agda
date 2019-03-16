@@ -30,7 +30,7 @@ open FH
 open FH public using (FileHandle) hiding (module FileHandle)
 open FileHandle
 
-private variable m : IOMode
+private variable mode : IOMode
 
 data IOError : Set where
   eAlreadyExists
@@ -62,26 +62,7 @@ data IOError : Set where
                                            | UnsupportedOperation | TimeExpired | ResourceVanished | Interrupted )
  #-}
 
-private
-  postulate
-    hClose   : RawHandle → IO ⊤
-    hOpen    : String → IOMode → IO (Either IOError RawHandle)
-    hGetLine : RawHandle → IO String
-    hPutStr  : RawHandle → String → IO ⊤
-
-{-# FOREIGN GHC
-  hOpen :: Text.Text -> IOMode -> IO (Either IOErrorType Handle)
-  hOpen name mode =
-    (Right <$> openFile (Text.unpack name) mode)
-      `catch` \ e -> return (Left $ ioe_type e)
-  #-}
-
-{-# COMPILE GHC hClose   = hClose #-}
-{-# COMPILE GHC hOpen    = hOpen  #-}
-{-# COMPILE GHC hGetLine = Text.hGetLine #-}
-{-# COMPILE GHC hPutStr  = Text.hPutStr  #-}
-
-record Open (h : FileHandle m) : Set where
+record Open (h : FileHandle mode) : Set where
 record Closed : Set where
 
 data FileIOResult (A : Set) : Set where
@@ -104,14 +85,33 @@ data CanWrite : IOMode → Set where
     readWriteMode : CanWrite readWriteMode
 
 data FileIO : Effect where
-  openFile  : String → (m : IOMode) →
-              FileIO (FileIOResult (FileHandle m)) [ Closed => r ∙ openFileResource m r ]
-  closeFile : (h : FileHandle m) → FileIO ⊤ [ Open h => Closed ]
-  fReadLine : ⦃ c : CanRead m ⦄ (h : FileHandle m) → FileIO String [- Open h -]
-  fWrite    : ⦃ w : CanWrite m ⦄ (h : FileHandle m) → String → FileIO ⊤ [- Open h -]
+  openFile   : String → (m : IOMode) →
+               FileIO (FileIOResult (FileHandle m)) [ Closed => r ∙ openFileResource m r ]
+  closeFile  : (h : FileHandle mode) → FileIO ⊤ [ Open h => Closed ]
+  fReadLine  : ⦃ c : CanRead mode ⦄ (h : FileHandle mode) → FileIO String [- Open h -]
+  fWriteLine : ⦃ w : CanWrite mode ⦄ (h : FileHandle mode) → String → FileIO ⊤ [- Open h -]
 
 FILE : Set → List EFFECT
 FILE H = [ FileIO ⊢ H ]
+
+private
+  postulate
+    hClose    : RawHandle → IO ⊤
+    hOpen     : String → IOMode → IO (Either IOError RawHandle)
+    hGetLine  : RawHandle → IO String
+    hPutStrLn : RawHandle → String → IO ⊤
+
+{-# FOREIGN GHC
+  hOpen :: Text.Text -> IOMode -> IO (Either IOErrorType Handle)
+  hOpen name mode =
+    (Right <$> openFile (Text.unpack name) mode)
+      `catch` \ e -> return (Left $ ioe_type e)
+  #-}
+
+{-# COMPILE GHC hClose    = hClose #-}
+{-# COMPILE GHC hOpen     = hOpen  #-}
+{-# COMPILE GHC hGetLine  = Text.hGetLine #-}
+{-# COMPILE GHC hPutStrLn = Text.hPutStrLn  #-}
 
 instance
   HandleFileIO : Handler FileIO IO
@@ -125,6 +125,6 @@ instance
   HandleFileIO .handle r (fReadLine h) k = do
     s ← hGetLine (rawHandle h)
     k s r
-  HandleFileIO .handle r (fWrite h s) k = do
-    hPutStr (rawHandle h) s
+  HandleFileIO .handle r (fWriteLine h s) k = do
+    hPutStrLn (rawHandle h) s
     k _ r

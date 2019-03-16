@@ -1,0 +1,17 @@
+
+Talk
+
+  - Introduction to algebraic effects
+    - Static
+      - CONSOLE
+    - Nondependent
+      - STATE? Simple state machine
+      - Protocol?
+    - Dependent
+      - FILE
+
+  - Custom handlers?
+
+  - Under the hood
+    - Proof search tactics
+

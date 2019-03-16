@@ -3,6 +3,7 @@ module Variables where
 
 open import Agda.Primitive
 open import Agda.Builtin.List
+open import Agda.Builtin.Nat
 
 variable
   ℓ ℓ₁ ℓ₂ : Level
@@ -10,3 +11,4 @@ variable
   xs ys : List A
   x y : A
   F M : Set ℓ → Set ℓ
+  n m : Nat

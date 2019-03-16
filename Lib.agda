@@ -11,6 +11,12 @@ infix 3 _⊆_
 _⊆_ : {A : Set ℓ} → List A → List A → Set ℓ
 xs ⊆ ys = All (_∈ ys) xs
 
+uniq : ⦃ _ : Eq A ⦄ → List A → List A
+uniq [] = []
+uniq (x ∷ xs) = x ∷ filter (isNo ∘ (x ==_)) (uniq xs)
+
+-- Tactic stuff --
+
 private
   vars : Nat → List Term
   vars 0       = []
