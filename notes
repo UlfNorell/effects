@@ -5,13 +5,13 @@ Talk
     - Static
       - CONSOLE
     - Nondependent
-      - STATE? Simple state machine
-      - Protocol?
+      - STATE
     - Dependent
       - FILE
 
-  - Custom handlers?
-
   - Under the hood
     - Proof search tactics
+    - Eff implementation
+
+  - Hangman Game
 

@@ -2,7 +2,6 @@
 module HangmanGame where
 
 open import Prelude hiding (putStrLn; _>>=_; _>>_)
-open import Control.Effect renaming (bindEff to _>>=_; thenEff to _>>_)
 open import Control.Effect.State
 open import Control.Effect.Console
 open import Control.Effect.Random
@@ -52,4 +51,4 @@ runGame = do
     call putStrLn s
 
 main : IO ⊤
-main = runEff (_ ∷ _ ∷ []) runGame λ _ _ → return _
+main = run (_ ∷ _ ∷ []) runGame

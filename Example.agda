@@ -1,9 +1,8 @@
 
 module Example where
 
-open import Prelude hiding (putStrLn; _>>=_; _>>_)
+open import Prelude hiding (putStrLn; _>>=_; _>>_; return)
 open import Container.List
-open import Control.Effect renaming (bindEff to _>>=_; thenEff to _>>_)
 open import Control.Effect.State
 open import Control.Effect.Console
 open import Control.Effect.File
@@ -19,7 +18,7 @@ test-io : Eff M Nat [- STATE Nat ∧ CONSOLE -]
 test-io = do
   x ← call get
   call (putStrLn ("x = " & show x))
-  ret x
+  return x
 
 copyLine : (hᵢ : FileHandle readMode) (hₒ : FileHandle writeMode) →
            Eff M ⊤ [- FILE (Open hᵢ) ∧ FILE (Open hₒ) -]
@@ -53,4 +52,4 @@ example = do
   ret _
 
 main : IO ⊤
-main = runEff (_ ∷ []) greeting λ _ _ → return _
+main = run (_ ∷ []) example

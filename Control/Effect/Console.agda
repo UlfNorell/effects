@@ -29,3 +29,5 @@ instance
   HandleConsole .handle _ getLine k = do
     s ← hsGetLine
     k s _
+
+open Control.Effect renaming (bindEff to _>>=_; thenEff to _>>_; returnEff to return) public

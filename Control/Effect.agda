@@ -50,15 +50,15 @@ updateResTy {es = E ⊢ _ ∷ es} {Resₒ = Resₒ} x zero! e = E ⊢ Resₒ x �
 updateResTy {es = ef ∷ es} x (suc i) e = ef ∷ updateResTy x i e
 
 data Eff (M : Set → Set) (A : Set) (esᵢ : List EFFECT) : (A → List EFFECT) → Set₂ where
-  ret : (x : A) → Eff M A esᵢ (λ _ → esᵢ)
+  retE  : (x : A) ⦃ eq : esᵢ ≡ esₒ x ⦄ → Eff M A esᵢ esₒ
   bindE : Eff M B esᵢ esₒ → ((x : B) → Eff M A (esₒ x) esₒ′) → Eff M A esᵢ esₒ′
   callE : (i : E ⊢ Resᵢ ∈ esᵢ) (e : E A Resᵢ Resₒ) →
           Eff M A esᵢ (λ x → updateResTy x i e)
   liftE : (inc : esᵢ′ ⊆ esᵢ) → Eff M A esᵢ′ esₒ →
           Eff M A esᵢ (λ x → updateWith (esₒ x) esᵢ inc)
-  newE : ⦃ h : Handler E M ⦄ (es : List EFFECT) → Res →
-         ⦃ eq : es ≡ E ⊢ Res ∷ [] ⦄ →
-         Eff M A (es ∧ esᵢ) (λ _ → es ∧ esᵢ) → Eff M A esᵢ (λ _ → esᵢ)
+  newE  : ⦃ h : Handler E M ⦄ (es : List EFFECT) → Res →
+          ⦃ eq : es ≡ E ⊢ Res ∷ [] ⦄ →
+          Eff M A (es ∧ esᵢ) (λ _ → es ∧ esᵢ) → Eff M A esᵢ (λ _ → esᵢ)
 
 syntax EffSyntax f i (λ x → o) = f [ i => x ∙ o ]
 syntax EffSyntax-nondep f i o = f [ i => o ]
@@ -82,6 +82,13 @@ thenEff m m′ = bindE m λ x → m′
 data HEnv (M : Set → Set) : List EFFECT → Set₁ where
   []  : HEnv M []
   _∷_ : ⦃ h : Handler E M ⦄ → Res → HEnv M es → HEnv M (E ⊢ Res ∷ es)
+
+instance
+  iEmptyEnv : HEnv M []
+  iEmptyEnv = []
+
+  iConsEnv : ⦃ h : Handler E M ⦄ ⦃ r : Res ⦄ ⦃ hs : HEnv M es ⦄ → HEnv M (E ⊢ Res ∷ es)
+  iConsEnv ⦃ r = r ⦄ ⦃ hs ⦄ = r ∷ hs
 
 envElem : ∀ {e} → e ∈ es → HEnv M es → HEnv M (e ∷ [])
 envElem zero!   (x ∷ env) = x ∷ []
@@ -110,14 +117,17 @@ execEff (r ∷ env) (suc i) e k = execEff env i e λ x env′ → k x (r ∷ env
 
 runEff : HEnv M esᵢ → Eff M A esᵢ esₒ →
          ((x : A) → HEnv M (esₒ x) → M B) → M B
-runEff env (ret x)       k = k x env
+runEff env (retE x ⦃ refl ⦄) k = k x env
 runEff env (bindE m f)   k = runEff env m λ x env′ → runEff env′ (f x) k
 runEff env (callE i es) k = execEff env i es k
 runEff env (liftE p m)   k = runEff (dropEnv p env) m λ x env′ → k x (rebuildEnv env′ p env)
 runEff env (newE e r ⦃ refl ⦄ m)  k = runEff (r ∷ env) m (λ { x (_ ∷ env′) → k x env′ })
 
-returnEff : A → Eff M A [ esᵢ => esᵢ ]
-returnEff x = ret x
+runE : ⦃ _ : Applicative M ⦄ ⦃ env : HEnv M esᵢ ⦄ → Eff M A esᵢ esₒ → M A
+runE ⦃ env = env ⦄ e = runEff env e λ x _ → pure x
+
+returnEff : (x : A) ⦃ eq : esᵢ ≡ esₒ x ⦄ → Eff M A esᵢ esₒ
+returnEff = retE
 
 new : ⦃ h : Handler E M ⦄ (es : List EFFECT) → Res →
       ⦃ eq : es ≡ E ⊢ Res ∷ [] ⦄ →
