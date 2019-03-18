@@ -71,5 +71,5 @@ instance
   HandleGame .handle r showState k = k (show r) r
   HandleGame .handle (running w got missing) (makeGuess c) k =
     case c ∈? missing of λ where
-      (yes i) → k true (running w (c ∷ got) (deleteIx missing i))
+      (yes i) → k true  (running w (c ∷ got) (deleteIx missing i))
       (no _)  → k false (running w got missing)

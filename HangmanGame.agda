@@ -1,10 +1,11 @@
 
 module HangmanGame where
 
-open import Prelude hiding (putStrLn; _>>=_; _>>_)
+open import Prelude hiding (putStrLn; _>>=_; _>>_; return)
 open import Control.Effect.State
 open import Control.Effect.Console
 open import Control.Effect.Random
+open import Control.Effect.File
 open import Hangman
 open import Variables
 
@@ -37,12 +38,27 @@ game {g = suc g} {l = suc l} = do
   call putStrLn "Correct!"
   game
 
-words : Vec String _
-words =
-  "some" ∷ "random" ∷ "words" ∷ "that" ∷ "are" ∷ "hard" ∷ "to" ∷ "guess" ∷ []
+readLines : (n : Nat) (h : FileHandle readMode) → Eff M (Vec String n) [- FILE (Open h) -]
+readLines zero h = return []
+readLines (suc n) h = do
+  s ← call fReadLine h
+  ss ← readLines n h
+  return (s ∷ ss)
 
-runGame : Eff M ⊤ [- RND ∧ CONSOLE -]
+readLinesFrom : ⦃ _ : Handler FileIO M ⦄ → String → (n : Nat) →
+                Eff M (Maybe (Vec String n))
+                      [- [] -]
+readLinesFrom file n = newE (FILE Closed) _ do
+  success h ← call openFile file readMode
+    where failure _ → return nothing
+  xs ← readLines n h
+  call closeFile h
+  return (just xs)
+
+runGame : ⦃ _ : Handler FileIO M ⦄ → Eff M ⊤ [- RND ∧ CONSOLE -]
 runGame = do
+  just words ← lift readLinesFrom "words.txt" 200
+    where nothing → return _
   i ← call randomNat _
   new (MYSTERY notRunning) initSt do
     call newGame (strToUpper $ indexVec words i)
@@ -51,4 +67,4 @@ runGame = do
     call putStrLn s
 
 main : IO ⊤
-main = run (_ ∷ _ ∷ []) runGame
+main = runE runGame

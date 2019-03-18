@@ -32,13 +32,13 @@ example = do
   n ← new (STATE Nat) 42 do
         s  ← lift (modify suc)
         s' ← call get
-        ret (s * s')
+        return (s * s')
   call putStrLn $ "n = " & show n
   new (FILE Closed) _ (new (FILE Closed) _ do
     success h ← call openFile "in.txt" readMode
       where failure _ → do
               call putStrLn "Failed to open file"
-              ret _
+              return _
     call putStrLn "Opened input file"
     success h₁ ← call openFile "out.txt" writeMode
       where failure _ → call closeFile h
@@ -49,7 +49,7 @@ example = do
     call putStrLn $ "Third line: " & s
     call closeFile h₁
     call closeFile h)
-  ret _
+  return _
 
 main : IO ⊤
-main = run (_ ∷ []) example
+main = runE example

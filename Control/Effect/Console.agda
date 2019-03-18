@@ -8,7 +8,7 @@ open import Variables
 open import Lib
 
 data ConsoleIO : Effect where
-  putStrLn : String → ConsoleIO ⊤ [- ⊤ -]
+  putStrLn : String → ConsoleIO ⊤ ⊤ (λ _ → ⊤) -- [- ⊤ -]
   getLine  : ConsoleIO String [- ⊤ -]
 
 CONSOLE : List EFFECT

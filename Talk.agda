@@ -38,15 +38,13 @@ open import Variables
 
 
 
+
+
 --- ===
 
 {-
 
-  Algebraic Effects in Agda
-
-            or
-
-   Stealing Stuff from Idris
+  Stealing Stuff from Idris
 
         Ulf Norell
 
@@ -54,6 +52,10 @@ open import Variables
     Tokyo, Mar 18 2019
 
  -}
+
+
+
+
 
 
 
@@ -82,10 +84,25 @@ greeting : Eff M ⊤ [- CONSOLE -]
 greeting = do
   call putStrLn "What is your name?"
   name ← call getLine
-  call putStrLn $ "Hello " & name & "!"
+  call putStrLn $ "Hello " & name
 
 -- main : IO ⊤
 -- main = runE greeting
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -130,9 +147,7 @@ execTop : Exp → Eff M Nat [- [] -]
 execTop e =
   new (STATE (Vec Nat 0)) [] do
     exec e
-    x ∷ [] ← call get
-    call put []
-    return x
+    pop
 
 test-exp : Exp
 test-exp = (lit 4 ⊕ lit 1) ⊕ lit 6
@@ -171,17 +186,17 @@ read-n-things = do
   call putStrLn "Which ones are they?"
   ss ← lift getLines n
   call put ss
-  return n
+  return _
 
 purge : Eff M ⊤ [ STATE A => STATE ⊤ ]
 purge = call put _
 
--- main : IO ⊤
--- main = runE do
---   n  ← read-n-things
---   xs ← call get
---   call putStrLn ("You want these " & show n & " things: " & show xs)
---   lift purge
+main : IO ⊤
+main = runE do
+  n  ← read-n-things
+  xs ← call get
+  call putStrLn ("You want these " & show n & " things: " & show xs)
+  lift purge
 
 
 
@@ -207,3 +222,72 @@ fopen file mode = call openFile file mode
 
 fclose : ∀ {mode} (h : FileHandle mode) → Eff M ⊤ [ FILE (Open h) => FILE Closed ]
 fclose h = call (closeFile h)
+
+file-test : Eff M ⊤ [- FILE Closed -]
+file-test = do
+  success h ← fopen "test.txt" readMode
+    where failure _ → return _
+  fclose h
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--- ===
+
+-- Under the hood
+
+_ = CONSOLE
+_ = STATE
+_ = Eff
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--- ===
+
+-- A more interesting example
+
+import Hangman
+import HangmanGame

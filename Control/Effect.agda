@@ -40,7 +40,7 @@ updateWith (E ⊢ R ∷ ys′) xs (i ∷ inc) = updateAt i R (updateWith ys′ x
 
 record Handler (E : Effect) (M : Set → Set) : Set₁ where
   field
-    handle : Resᵢ → (es : E A Resᵢ Resₒ) →
+    handle : Resᵢ → E A Resᵢ Resₒ →
              (∀ x → Resₒ x → M B) → M B
 
 open Handler ⦃ ... ⦄ public
@@ -50,15 +50,20 @@ updateResTy {es = E ⊢ _ ∷ es} {Resₒ = Resₒ} x zero! e = E ⊢ Resₒ x �
 updateResTy {es = ef ∷ es} x (suc i) e = ef ∷ updateResTy x i e
 
 data Eff (M : Set → Set) (A : Set) (esᵢ : List EFFECT) : (A → List EFFECT) → Set₂ where
+
   retE  : (x : A) ⦃ eq : esᵢ ≡ esₒ x ⦄ → Eff M A esᵢ esₒ
+
   bindE : Eff M B esᵢ esₒ → ((x : B) → Eff M A (esₒ x) esₒ′) → Eff M A esᵢ esₒ′
+
   callE : (i : E ⊢ Resᵢ ∈ esᵢ) (e : E A Resᵢ Resₒ) →
           Eff M A esᵢ (λ x → updateResTy x i e)
+
   liftE : (inc : esᵢ′ ⊆ esᵢ) → Eff M A esᵢ′ esₒ →
           Eff M A esᵢ (λ x → updateWith (esₒ x) esᵢ inc)
+
   newE  : ⦃ h : Handler E M ⦄ (es : List EFFECT) → Res →
           ⦃ eq : es ≡ E ⊢ Res ∷ [] ⦄ →
-          Eff M A (es ∧ esᵢ) (λ _ → es ∧ esᵢ) → Eff M A esᵢ (λ _ → esᵢ)
+          Eff M A (es ∧ esᵢ) (λ x → es ∧ esₒ x) → Eff M A esᵢ esₒ
 
 syntax EffSyntax f i (λ x → o) = f [ i => x ∙ o ]
 syntax EffSyntax-nondep f i o = f [ i => o ]
@@ -134,9 +139,6 @@ new : ⦃ h : Handler E M ⦄ (es : List EFFECT) → Res →
       Eff M A (es ∧ esᵢ) (λ _ → es ∧ esᵢ) → Eff M A esᵢ (λ _ → esᵢ)
 new = newE
 
--- call : (e : E A Resᵢ Resₒ) → Eff A (mkEff Resᵢ E ∷ []) (λ x → mkEff (Resₒ x) E ∷ [])
--- call e = callE zero! e
-
 apply-tac-def : Name → Tactic → Tactic
 apply-tac-def f tac ?hole = do
   ?p ← newMeta!
@@ -154,7 +156,7 @@ macro subset! = tac-subset
 
 macro
   lift_ = apply-tac-con (quote liftE) tac-subset
-  -- call_ = apply-tac-con (quote callE) (tac-find-index' check-elem)
+
   call_ : Tactic
   call_ ?hole = do
     pi (arg _ `e) _ ← inferType ?hole
@@ -164,8 +166,8 @@ macro
       where meta x _ → blockOnMeta x
             other → typeError (strErr "Not good:" ∷ termErr other ∷ [])
     `es ← newMeta (def₁ (quote List) (def₀ (quote EFFECT)))
-    `R   ← newMeta set₀
-    ?i   ← newMeta (def₂ (quote _∈_) (con₂ (quote _⊢_) (def `E []) `R) `es)
+    `R  ← newMeta set₀
+    ?i  ← newMeta (def₂ (quote _∈_) (con₂ (quote _⊢_) (def `E []) `R) `es)
     unify ?hole (con₁ (quote callE) ?i)
     tac-find-index ?i
 
